@@ -99,7 +99,7 @@ void loop() {
     dataString += String(inByte);     
   }
   
-  file = SD.open("stest4.txt", FILE_WRITE);
+  file = SD.open("stest5.txt", FILE_WRITE);
   // read from sensor thing, send to computer
   Serial.print(dataString);
 
@@ -114,7 +114,7 @@ void loop() {
 
   // Serial.print("SD Card ing, attempt "); Serial.println(packetnum);
   // do the file things (reading)
-  file = SD.open("stest4.txt", FILE_READ);
+  file = SD.open("stest5.txt", FILE_READ);
   // Serial.println(file); // debug
   if (file) {
 
@@ -129,6 +129,38 @@ void loop() {
     Serial.print(F("SD Card: error on opening file for reading"));
   }
   
+
+  int packet_len = dataString.length()+1 ;
+  char packet_array[packet_len];
+  dataString.toCharArray(packet_array, packet_len);
+  Serial.println(packet_array);
+
+  Serial.println("Transmitting..."); // Send a message to rf95_server
+  delay(10);
+  rf95.send((uint8_t *)packet_array, packet_len);
+  Serial.println("Waiting for packet to complete...");
+  delay(10);
+  rf95.waitPacketSent();
+  // Now wait for a reply
+  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
+  uint8_t len = sizeof(buf);
+
+  Serial.println("Waiting for reply...");
+  if (rf95.waitAvailableTimeout(2000)) {
+    // Should be a reply message for us now
+    if (rf95.recv(buf, &len)) {
+      Serial.print("Got reply: ");
+      Serial.println((char*)buf);
+      Serial.print("RSSI: ");
+      Serial.println(rf95.lastRssi(), DEC);
+    } else {
+      Serial.println("Receive failed");
+    }
+  } else {
+    Serial.println("No reply, is there a listener around?");
+  }
+
+
   /*
   // delay(1000); // Wait 1 second between transmits, could also 'sleep' here!
   Serial.println("Transmitting..."); // Send a message to rf95_server
