@@ -85,7 +85,7 @@ int16_t packetnum = 0;  // packet counter, we increment per xmission
 
 void loop() {
   //delay(1000);
-    //char radiopacket 
+  //char radiopacket 
   char radiopacket[20] = "Data packet #      "; // default message
   itoa(packetnum++, radiopacket+13, 10);
   //Serial.print("Sending "); Serial.println(radiopacket);
@@ -93,7 +93,7 @@ void loop() {
   
   String dataString = "";
 
-  if (Serial1.available()) {
+  while (Serial1.available()) {
     char inByte = Serial1.read();
     // Serial.write(inByte); // debug
     dataString += String(inByte);     
@@ -107,8 +107,8 @@ void loop() {
     //Serial.write(dataString);  
     file.print(dataString);
     file.close();
-  }
-     else { // error oopsies
+  } 
+    else { // error oopsies
     Serial.print(F("SD Card: error on opening file for writing"));
   }
 
