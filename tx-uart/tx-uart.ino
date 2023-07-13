@@ -1,4 +1,3 @@
-
 #include <SPI.h>
 #include <SD.h>
 #include <RH_RF95.h>
@@ -26,6 +25,7 @@ void setup() {
   digitalWrite(RFM95_RST, HIGH);
 
   Serial.begin(115200); // usb bus
+  Serial1.begin(115200); // uart from sensor feather
 
   while (!Serial) delay(1);
 
@@ -84,52 +84,56 @@ void setup() {
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 
 void loop() {
-  
-  delay(10000); // Wait 10 seconds between transmits, could also 'sleep' here!
-  Serial.println("Transmitting..."); // Send a message to rf95_server
-
-  //char radiopacket 
-  char radiopacket[20] = "Hello World #      "; // default message
+  //delay(1000);
+    //char radiopacket 
+  char radiopacket[20] = "Data packet #      "; // default message
   itoa(packetnum++, radiopacket+13, 10);
-  Serial.print("Sending "); Serial.println(radiopacket);
+  //Serial.print("Sending "); Serial.println(radiopacket);
   radiopacket[19] = 0;
+  
+  String dataString = "";
 
-  Serial.print("SD Card ing, attempt "); Serial.println(radiopacket);
+  if (Serial1.available()) {
+    char inByte = Serial1.read();
+    // Serial.write(inByte); // debug
+    dataString += String(inByte);     
+  }
+  
+  file = SD.open("stest4.txt", FILE_WRITE);
+  // read from sensor thing, send to computer
+  Serial.print(dataString);
+
+  if (file) {
+    //Serial.write(dataString);  
+    file.print(dataString);
+    file.close();
+  }
+     else { // error oopsies
+    Serial.print(F("SD Card: error on opening file for writing"));
+  }
+
+  // Serial.print("SD Card ing, attempt "); Serial.println(packetnum);
   // do the file things (reading)
-  file = SD.open("simple.txt", FILE_READ);
+  file = SD.open("stest4.txt", FILE_READ);
   // Serial.println(file); // debug
   if (file) {
 
     while (file.available()) {
-
       readfile = file.read();
-      Serial.print(readfile);
-
+      
     }
+    //Serial.println(readfile);
     file.close();
-
-
   }
    else { // error oopsies
     Serial.print(F("SD Card: error on opening file for reading"));
   }
-
-   // do the file things (writing)
-  file = SD.open("simple.txt", FILE_WRITE);
-  // Serial.println(file); // debug
-  if (file) {
-
-    file.print(packetnum);
-    file.close();
-
-  }
-   else { // error oopsies
-    Serial.print(F("SD Card: error on opening file for writing"));
-  }
-
-  Serial.println("Sending...");
+  
+  /*
+  // delay(1000); // Wait 1 second between transmits, could also 'sleep' here!
+  Serial.println("Transmitting..."); // Send a message to rf95_server
   delay(10);
-  rf95.send((uint8_t *)radiopacket, 20);
+  rf95.send((uint8_t *)inByte, 150);
 
   Serial.println("Waiting for packet to complete...");
   delay(10);
@@ -139,7 +143,7 @@ void loop() {
   uint8_t len = sizeof(buf);
 
   Serial.println("Waiting for reply...");
-  if (rf95.waitAvailableTimeout(1000)) {
+  if (rf95.waitAvailableTimeout(2000)) {
     // Should be a reply message for us now
     if (rf95.recv(buf, &len)) {
       Serial.print("Got reply: ");
@@ -152,5 +156,5 @@ void loop() {
   } else {
     Serial.println("No reply, is there a listener around?");
   }
-
+ */
 }
