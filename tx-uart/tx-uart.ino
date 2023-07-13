@@ -129,7 +129,6 @@ void loop() {
     Serial.print(F("SD Card: error on opening file for reading"));
   }
   
-
   int packet_len = dataString.length()+1 ;
   char packet_array[packet_len];
   dataString.toCharArray(packet_array, packet_len);
