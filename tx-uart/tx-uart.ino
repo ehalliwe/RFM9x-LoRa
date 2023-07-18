@@ -135,12 +135,16 @@ void loop() {
 	// if (verbose) {
       		// Serial.write(dataString); // this now throws an error. NO IDEA WHY. 
 	// }
-      file.print(dataString); // prints data into file
-      file.print(radiopacket); // test write of radiopacket data. turn off 
-      file.close(); // don't need that anymore
+	if (dataStream) {
+      		file.print(dataString); // prints data into file
+	}	
+	else {
+      		file.print(radiopacket); // test write of radiopacket data. turn off 
+	}
+      	file.close(); // don't need that anymore
     } 
     else { // error oopsies
-      Serial.println(F("SD Card: error on opening Tx file for writing"));
+      	Serial.println(F("SD Card: error on opening Tx file for writing"));
   }
 
   // Serial.print("SD Card ing, attempt "); Serial.println(packetnum);
