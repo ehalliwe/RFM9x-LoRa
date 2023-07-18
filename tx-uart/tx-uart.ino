@@ -31,6 +31,7 @@ int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 1;
 String filename = "jim-tx.txt";
 int slowdown = 1000;
+int dataStream = 0; // defaults to basic packet, change to 1 if sensors are connected 
 
 void setup() {
 
@@ -101,6 +102,8 @@ void setup() {
 
 	Serial.print("File in use: "); Serial.println(filename);
 
+	Serial.print("Data stream of choice: "); Serial.println(dataStream);
+
 	Serial.println("Here goes nothing...");
 }
 
@@ -165,12 +168,20 @@ void loop() {
   char packet_array[packet_len];
   dataString.toCharArray(packet_array, packet_len);
   
-  Serial.print("Tx Packet: "); Serial.println(packet_array); // for debug
-   
   Serial.println("Transmitting..."); // Send a message to rf95_server
   delay(10);
-  rf95.send((uint8_t *)radiopacket, 20); // for testing if not connected
-  // rf95.send((uint8_t *)packet_array, packet_len);
+	if (dataStream) {
+		if (verbose) {
+		Serial.print("Tx Packet: "); Serial.println(packet_array);
+		}
+  		rf95.send((uint8_t *)packet_array, packet_len);
+	}
+	else {
+		if (verbose) {
+		Serial.print("Tx Packet: "); Serial.println(radiopacket);
+		}
+  		rf95.send((uint8_t *)radiopacket, 20); // for testing if not connected
+	}
   Serial.println("Sent. Waiting for acknowledgement...");
   delay(10);
   rf95.waitPacketSent();
