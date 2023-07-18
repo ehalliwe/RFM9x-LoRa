@@ -28,8 +28,11 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 File file;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
+int verbose = 0;
+String filename = "jim-rx.txt";
 
 void setup() {
+
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, HIGH);
@@ -39,7 +42,8 @@ void setup() {
   delay(100); // master Rx delay timer
 
   while (!Serial); // waits for serial
-
+	
+  Serial.print ("--------------"); Serial.print("Rx Startup Sequence"); Serial.println("--------------");
   Serial.print("Initializing SD card...");
 
   if (!SD.begin(PIN_SPI_CS)) {
@@ -88,6 +92,14 @@ void setup() {
   // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
   // you can set transmitter powers from 5 to 23 dBm:
   rf95.setTxPower(23, false);
+
+	Serial.println("Tx Power set to 23 dBm");
+	
+	Serial.print("Verbosity level: "); Serial.println(verbose);
+	
+	Serial.print("File in use: "); Serial.println(filename);
+
+	Serial.println("Here goes nothing...");
 }
 
 void loop() {
@@ -107,7 +119,7 @@ void loop() {
       Serial.print("RSSI: ");
       Serial.println(rf95.lastRssi(), DEC);
       
-      file = SD.open("rx1.txt", FILE_WRITE); // create file to write data to
+      file = SD.open(filename, FILE_WRITE); // create file to write data to
       if (file) {
         file.print((char*)buf);
         file.close();
@@ -117,22 +129,23 @@ void loop() {
       }
 
       // read and print for debug; don't need this in the final... maybe
-       // start of debug block
-      file = SD.open("rx1.txt", FILE_READ);
-      // Serial.println(file); // debug
-      if (file) {
-        while (file.available()) { // reads file from start to finish..
-                                   // not sure how to do just the latest line. 
-          readfile = file.read();
+      // start of debug block
+      if (verbose) {
+      	file = SD.open(filename, FILE_READ);
+      	// Serial.println(file); // debug
+      		if (file) {
+        	while (file.available()) { // reads file from start to finish..
+               	                           // not sure how to do just the latest line. 
+          	readfile = file.read();
           
-        }
-        Serial.println(readfile);
+          	Serial.print(readfile);
+        	}
         file.close();
-      }
-      else { // error oopsies
-        Serial.print(F("SD Card: error on opening file for reading"));
-      }
-      
+      	}
+      	else { // error oopsies
+        	Serial.print(F("SD Card: error on opening file for reading"));
+      	}
+      } 
 
       // Send a reply. Don't actually need this... maybe. 
       // please decide to comment out or not!

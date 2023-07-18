@@ -28,7 +28,8 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 File file;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
-
+int verbose = 0;
+String filename = "jim-tx.txt";
 
 void setup() {
 
@@ -42,7 +43,7 @@ void setup() {
 
   while (!Serial); // waits if not worky 
 
-  Serial.print("--------------"); Serial.print("Startup Sequence"); Serial.println("--------------");
+  Serial.print("--------------"); Serial.print("Tx Startup Sequence"); Serial.println("--------------");
 
   Serial.print("Initializing SD card...");
 
@@ -92,6 +93,14 @@ void setup() {
   // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
   // you can set transmitter powers from 5 to 23 dBm:
   rf95.setTxPower(23, false);
+
+	Serial.println("Tx Power set to 23 dBm");
+
+	Serial.print("Verbosity level: "); Serial.println(verbose);
+
+	Serial.print("File in use: "); Serial.println(filename);
+
+	Serial.println("Here goes nothing...");
 }
 
 void loop() {
@@ -111,7 +120,7 @@ void loop() {
     dataString += String(inByte); // appends char to string    
   }
   
-  file = SD.open("tx1.txt", FILE_WRITE); // opens Tx SD card for data writing. also print to computer terminal
+  file = SD.open(filename, FILE_WRITE); // opens Tx SD card for data writing. also print to computer terminal
   Serial.print("Write File Status: "); Serial.println(file); // debug
     
   Serial.print("Data String: "); Serial.println(dataString); // prints to computer
@@ -129,7 +138,7 @@ void loop() {
   // Serial.print("SD Card ing, attempt "); Serial.println(packetnum);
   // reading from file to check that the data was written in correctly. don't use this in the flight code
   
-  file = SD.open("tx1.txt", FILE_READ);
+  file = SD.open(filename, FILE_READ);
   Serial.print("Read File Status: "); Serial.println(file); // debug
   if (file) {
 
