@@ -28,7 +28,7 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 File file;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
-int verbose = 0;
+int verbose = 1;
 String filename = "jim-tx.txt";
 int slowdown = 1000;
 
@@ -126,7 +126,7 @@ void loop() {
   file = SD.open(filename, FILE_WRITE); // opens Tx SD card for data writing. also print to computer terminal
   Serial.print("Write File Status: "); Serial.println(file); // debug
     
-  Serial.print("Data String: "); Serial.println(dataString); // prints to computer
+  Serial.print("Sensor output: "); Serial.println(dataString); // prints to computer
 
     if (file) { 
 	// if (verbose) {
@@ -152,12 +152,12 @@ void loop() {
       			readfile = file.read();
      			} 
   		}
-    		Serial.println(readfile);
-    		file.close();
+    		Serial.print("Readfile output: "); Serial.println(readfile);
 	
    		if (!file) { // error oopsies
     		Serial.println(F("SD Card: error on opening file for reading"));
   		}
+		file.close();
 	}	
   
   // now actually sending the data to the Rx feather + LoRa
@@ -165,20 +165,20 @@ void loop() {
   char packet_array[packet_len];
   dataString.toCharArray(packet_array, packet_len);
   
-  Serial.print("Science Packet: "); Serial.println(packet_array); // for debug
-  
+  Serial.print("Tx Packet: "); Serial.println(packet_array); // for debug
+   
   Serial.println("Transmitting..."); // Send a message to rf95_server
   delay(10);
   rf95.send((uint8_t *)radiopacket, 20); // for testing if not connected
   // rf95.send((uint8_t *)packet_array, packet_len);
-  Serial.println("Waiting for packet to complete...");
+  Serial.println("Sent. Waiting for acknowledgement...");
   delay(10);
   rf95.waitPacketSent();
   // Now wait for a reply 
   uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
   uint8_t len = sizeof(buf);
 
-  Serial.println("Waiting for reply...");
+  // Serial.println("Waiting for reply...");
   if (rf95.waitAvailableTimeout(2000)) {
     // Should be a reply message for us now
     if (rf95.recv(buf, &len)) {
@@ -190,7 +190,7 @@ void loop() {
       Serial.println("Receive failed");
     }
   } else {
-    Serial.println("No reply, is there a listener around?");
+    Serial.println("Receive timeout.");
   }
 
   /* // old transmitter code artifacts

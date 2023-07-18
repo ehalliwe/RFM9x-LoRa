@@ -149,7 +149,7 @@ void loop() {
 
       // Send a reply. Don't actually need this... maybe. 
       // please decide to comment out or not!
-      uint8_t data[] = "And hello back to you";
+      uint8_t data[] = "Packet received.";
       rf95.send(data, sizeof(data));
       rf95.waitPacketSent();
       Serial.println("Sent a reply");
