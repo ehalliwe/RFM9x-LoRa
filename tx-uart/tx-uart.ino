@@ -26,10 +26,11 @@
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
 File file;
+File root;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 1;
-String filename = "jim-tx.txt";
+String filename = "18afttx.txt";
 int slowdown = 1000;
 int dataStream = 0; // defaults to basic packet, change to 1 if sensors are connected 
 
@@ -67,6 +68,10 @@ void setup() {
   Serial.println("initialization done.");
   delay(100);
 
+  Serial.println("Contents of SD Card:");
+  root = SD.open("/");
+  printDirectory(root, 0);
+
   Serial.println("Feather LoRa TX Test!");
 
   // manual reset
@@ -102,7 +107,7 @@ void setup() {
 
 	Serial.print("File in use: "); Serial.println(filename);
 
-	Serial.print("Data stream of choice: "); Serial.println(dataStream);
+	Serial.print("Data stream of choice (0 for filler, 1 for sensors): "); Serial.println(dataStream);
 
 	Serial.println("Here goes nothing...");
 }
@@ -118,31 +123,37 @@ void loop() {
   
   String dataString = ""; // preallocate
 
-  while (Serial1.available()) { // reads data from sensor UART if available 
-    char inByte = Serial1.read(); // reads to char
-	// if (verbose) {
-    		Serial.write(inByte); // debug
-	// }
-    dataString += String(inByte); // appends char to string    
+  if (dataStream) {
+    while (Serial1.available()) { // reads data from sensor UART if available 
+      char inByte = Serial1.read(); // reads to char
+	  // if (verbose) {
+    	  	Serial.write(inByte); // debug
+	  // }
+      dataString += String(inByte); // appends char to string    
+    }
   }
   
   file = SD.open(filename, FILE_WRITE); // opens Tx SD card for data writing. also print to computer terminal
-  Serial.print("Write File Status: "); Serial.println(file); // debug
-    
-  Serial.print("Sensor output: "); Serial.println(dataString); // prints to computer
-
-    if (file) { 
-	// if (verbose) {
-      		// Serial.write(dataString); // this now throws an error. NO IDEA WHY. 
-	// }
-	if (dataStream) {
-      		file.print(dataString); // prints data into file
-	}	
-	else {
-      		file.print(radiopacket); // test write of radiopacket data. turn off 
-	}
-      	file.close(); // don't need that anymore
-    } 
+  if (verbose) {
+    Serial.print("Write File Status: "); Serial.println(file); // debug
+  }
+  
+  if (verbose) {
+    Serial.print("Sensor output: "); Serial.println(dataString); // prints to computer
+  }
+  
+  if (file) { 
+    // if (verbose) {
+              // Serial.write(dataString); // this now throws an error. NO IDEA WHY. 
+    // }
+    if (dataStream) {
+          file.print(dataString); // prints data into file
+    }	
+    else {
+          file.print(radiopacket); // test write of radiopacket data. turn off 
+    }
+    file.close(); // don't need that anymore
+  } 
     else { // error oopsies
       	Serial.println(F("SD Card: error on opening Tx file for writing"));
   }
@@ -168,23 +179,28 @@ void loop() {
 	}	
   
   // now actually sending the data to the Rx feather + LoRa
-  int packet_len = dataString.length()+1 ;
-  char packet_array[packet_len];
-  dataString.toCharArray(packet_array, packet_len);
-  
+  // if(dataStream) { 
+  //   int packet_len = dataString.length()+1 ;
+  //   char packet_array[packet_len];
+  //   dataString.toCharArray(packet_array, packet_len);
+  // }
+
   Serial.println("Transmitting..."); // Send a message to rf95_server
   delay(10);
 	if (dataStream) {
-		if (verbose) {
+    int packet_len = dataString.length()+1 ;
+    char packet_array[packet_len];
+    dataString.toCharArray(packet_array, packet_len);
+  	rf95.send((uint8_t *)packet_array, packet_len);
+    if (verbose) {
 		Serial.print("Tx Packet: "); Serial.println(packet_array);
 		}
-  		rf95.send((uint8_t *)packet_array, packet_len);
 	}
 	else {
-		if (verbose) {
+  		rf95.send((uint8_t *)radiopacket, 20); // for testing if not connected
+    if (verbose) {
 		Serial.print("Tx Packet: "); Serial.println(radiopacket);
 		}
-  		rf95.send((uint8_t *)radiopacket, 20); // for testing if not connected
 	}
   Serial.println("Sent. Waiting for acknowledgement...");
   delay(10);
@@ -194,7 +210,7 @@ void loop() {
   uint8_t len = sizeof(buf);
 
   // Serial.println("Waiting for reply...");
-  if (rf95.waitAvailableTimeout(2000)) {
+  if (rf95.waitAvailableTimeout(3000)) {
     // Should be a reply message for us now
     if (rf95.recv(buf, &len)) {
       Serial.print("Got reply: ");
@@ -237,4 +253,48 @@ void loop() {
     Serial.println("No reply, is there a listener around?");
   }
  */
+ 
+}
+
+void printDirectory(File dir, int numTabs) {
+
+  while (true) {
+
+    File entry =  dir.openNextFile();
+
+    if (! entry) {
+
+      // no more files
+
+      break;
+
+    }
+
+    for (uint8_t i = 0; i < numTabs; i++) {
+
+      Serial.print('\t');
+
+    }
+
+    Serial.print(entry.name());
+
+    if (entry.isDirectory()) {
+
+      Serial.println("/");
+
+      printDirectory(entry, numTabs + 1);
+
+    } else {
+
+      // files have sizes, directories do not
+
+      Serial.print("\t\t");
+
+      Serial.println(entry.size(), DEC);
+
+    }
+
+    entry.close();
+
+  }
 }

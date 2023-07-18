@@ -26,10 +26,11 @@
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
 File file;
+File root;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 0;
-String filename = "jim-rx.txt";
+String filename = "18aftrx.txt";
 
 void setup() {
 
@@ -63,6 +64,10 @@ void setup() {
   }
   Serial.println("initialization done.");
   delay(100);
+
+  Serial.println("Contents of SD Card:");
+  root = SD.open("/");
+  printDirectory(root, 0);
 
   Serial.println("Feather LoRa RX Test!");
 
@@ -158,5 +163,48 @@ void loop() {
     else {
       Serial.println("Receive failed");
     }
+  }
+}
+
+void printDirectory(File dir, int numTabs) {
+
+  while (true) {
+
+    File entry =  dir.openNextFile();
+
+    if (! entry) {
+
+      // no more files
+
+      break;
+
+    }
+
+    for (uint8_t i = 0; i < numTabs; i++) {
+
+      Serial.print('\t');
+
+    }
+
+    Serial.print(entry.name());
+
+    if (entry.isDirectory()) {
+
+      Serial.println("/");
+
+      printDirectory(entry, numTabs + 1);
+
+    } else {
+
+      // files have sizes, directories do not
+
+      Serial.print("\t\t");
+
+      Serial.println(entry.size(), DEC);
+
+    }
+
+    entry.close();
+
   }
 }
