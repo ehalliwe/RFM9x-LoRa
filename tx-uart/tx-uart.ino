@@ -30,6 +30,7 @@ char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 0;
 String filename = "jim-tx.txt";
+int slowdown = 1000;
 
 void setup() {
 
@@ -105,7 +106,7 @@ void setup() {
 
 void loop() {
   
-  delay(1000); // send data only every 1 sec
+  delay(slowdown); // send data only every 1 sec
   //char radiopacket 
   char radiopacket[20] = "Data packet #      "; // default message
   itoa(packetnum++, radiopacket+13, 10); // iteration counter
@@ -116,7 +117,9 @@ void loop() {
 
   while (Serial1.available()) { // reads data from sensor UART if available 
     char inByte = Serial1.read(); // reads to char
-    // Serial.write(inByte); // debug
+	// if (verbose) {
+    		Serial.write(inByte); // debug
+	// }
     dataString += String(inByte); // appends char to string    
   }
   
@@ -126,7 +129,9 @@ void loop() {
   Serial.print("Data String: "); Serial.println(dataString); // prints to computer
 
     if (file) { 
-      //Serial.write(dataString);  
+	// if (verbose) {
+      		// Serial.write(dataString); // this now throws an error. NO IDEA WHY. 
+	// }
       file.print(dataString); // prints data into file
       file.print(radiopacket); // test write of radiopacket data. turn off 
       file.close(); // don't need that anymore
@@ -137,21 +142,23 @@ void loop() {
 
   // Serial.print("SD Card ing, attempt "); Serial.println(packetnum);
   // reading from file to check that the data was written in correctly. don't use this in the flight code
-  
-  file = SD.open(filename, FILE_READ);
-  Serial.print("Read File Status: "); Serial.println(file); // debug
-  if (file) {
-
-    while (file.available()) { // reads file from start to finish.. not sure how to do just the latest line. 
-      readfile = file.read();
-      
-    }
-    //Serial.println(readfile);
-    file.close();
-  }
-   else { // error oopsies
-    Serial.println(F("SD Card: error on opening file for reading"));
-  }
+ 
+	if (verbose) { 
+  		file = SD.open(filename, FILE_READ);
+  		Serial.print("Read File Status: "); Serial.println(file); // debug
+  		
+		if (file) {
+    			while (file.available()) { // reads file from start to finish.. not sure how to do just the latest line. 
+      			readfile = file.read();
+     			} 
+  		}
+    		Serial.println(readfile);
+    		file.close();
+	
+   		if (!file) { // error oopsies
+    		Serial.println(F("SD Card: error on opening file for reading"));
+  		}
+	}	
   
   // now actually sending the data to the Rx feather + LoRa
   int packet_len = dataString.length()+1 ;
