@@ -31,7 +31,7 @@ File root;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 1;
-String filename = "18afttx.txt";
+String filename = "bowltx2.txt";
 int slowdown = 1000;
 int dataStream = 0;  // defaults to basic packet, change to 1 if sensors are connected
 char time[10] = "";

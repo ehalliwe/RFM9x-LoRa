@@ -30,7 +30,7 @@ File root;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 0;
-String filename = "18aftrx.txt";
+String filename = "bowlrx2.txt";
 
 void setup() {
 
