@@ -31,10 +31,10 @@ File root;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 1;
-String filename = "bowltx2.txt";
+String filename = "bat-tx.txt";
 int slowdown = 1000;
 int dataStream = 0;  // defaults to basic packet, change to 1 if sensors are connected
-char time[10] = "";
+// char time[10] = "";
 
 void setup() {
 
@@ -131,10 +131,7 @@ void loop() {
 
   delay(slowdown);  // send data only every 1 sec
   //char radiopacket
-  time_t t = now();
-  Serial.print("The current time is: ");
-  Serial.print(hour(t));Serial.print(minute(t));Serial.println(second(t));
-  
+   
   // for whatever reason, i can't get this bit to work. please revisit it tomorrow.
   //char timepacket[20] = "Time packet =      "; // time packet
   //itoa(second(t), timepacket + 17, 10);
@@ -143,13 +140,40 @@ void loop() {
   //Serial.print("--------------");
   //Serial.print(timepacket);
   //Serial.println("--------------");
-
+  
   char radiopacket[20] = "Data packet #      ";  // default message
   itoa(packetnum++, radiopacket + 13, 10);       // iteration counter
   Serial.print("--------------");
   Serial.print(radiopacket);
   Serial.println("--------------");
   radiopacket[19] = 0;  // not sure why this is here
+
+  // time_t t = now();
+  // Serial.print("The current time is: ");
+  // String time = String(hour(t)); 
+  // time += String(minute(t)); 
+  // time += String(second(t));
+  // Serial.println(time);
+
+  // String radiopacket2 = time;
+  // radiopacket2 += String(radiopacket);
+  // Serial.println(radiopacket2);
+  
+  time_t t = now();
+  Serial.print("The current time is: ");
+  int time = hour(t); 
+  time += minute(t); 
+  time += second(t);
+  Serial.print(time);
+  Serial.print(" and ");
+
+  char radiopacket2[40] = "";
+  itoa(time, radiopacket2, 10);       // iteration counter
+  Serial.println(radiopacket2);
+  //char foo[40] = "Data packet #";
+  //radiopacket2 += foo;  // default message
+  //radiopacket2 += packetnum;
+  //Serial.println(radiopacket2);
 
   String dataString = "";  // preallocate
 
