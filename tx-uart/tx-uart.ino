@@ -159,12 +159,19 @@ void loop() {
   unsigned long m = minute(t);
   unsigned long s = second(t); 
  
-  String dataString = "";  // preallocate
-  dataString += String(h);
-  dataString += String(m);
-  dataString += String(s);
-  Serial.println(dataString);
-  dataString += ",";
+  String preamble = "";  // preallocate preamble
+  preamble += ",";
+  preamble += String(h);
+  preamble += String(m);
+  preamble += String(s);
+  Serial.println(preamble);
+  preamble += ",";
+
+  preamble += String(radiopacket);
+  Serial.println(preamble);
+  preamble += ",";
+
+  String sensorData = ""; // preallocate sensor data
 
   if (dataStream) {
     while (Serial1.available()) {    // reads data from sensor UART if available
@@ -172,9 +179,23 @@ void loop() {
                                      // if (verbose) {
       Serial.write(inByte);          // debug
                                      // }
-      dataString += String(inByte);  // appends char to string
+      sensorData += String(inByte);  // appends char to string
     }
   }
+  preamble += String(sensorData.length()); // appends sensor data length
+  Serial.println(preamble);
+  preamble += ",";
+
+  String middleMan = ""; // preallocate temp variable to get length
+  middleMan += preamble; // add preamble 
+  Serial.println(middleMan);
+  middleMan += sensorData; // add sensor data
+  Serial.println(middleMan);
+
+  String dataString = "";
+  dataString += String(middleMan.length());
+  dataString += middleMan; // this is the packet to be sent
+
 
   file = SD.open(filename, FILE_WRITE);  // opens Tx SD card for data writing. also print to computer terminal
   if (verbose) {
