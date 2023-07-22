@@ -31,6 +31,7 @@ File root;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 1;
+int verbose_readfile = 0;
 String filename = "sat-tx.txt";
 int slowdown = 200;
 int dataStream = 1;  // defaults to basic packet, change to 1 if sensors are connected
@@ -153,22 +154,17 @@ void loop() {
   radiopacket[19] = 0;  // not sure why this is here
 
   time_t t = now();
-  Serial.print("The current time is: ");
-  int h = hour(t);
-  int m = minute(t);
-  int s = second(t); 
-  Serial.print(h);Serial.print(m);Serial.println(s);
-  
-  /*
-  char h[ ] = hour(t);
-  Serial.println(h);
-  char m[ ] = minute(t);
-  Serial.println(m);
-  char s[ ] = second(t);
-  Serial.println(s);
-  String(bar) = h
-  */ 
+  Serial.print("The pkt timestamp will be: ");
+  unsigned long h = hour(t);
+  unsigned long m = minute(t);
+  unsigned long s = second(t); 
+ 
   String dataString = "";  // preallocate
+  dataString += String(h);
+  dataString += String(m);
+  dataString += String(s);
+  Serial.println(dataString);
+  dataString += ",";
 
   if (dataStream) {
     while (Serial1.available()) {    // reads data from sensor UART if available
@@ -208,7 +204,7 @@ void loop() {
   // Serial.print("SD Card ing, attempt "); Serial.println(packetnum);
   // reading from file to check that the data was written in correctly. don't use this in the flight code
 
-  if (verbose) {
+  if (verbose_readfile) {
     file = SD.open(filename, FILE_READ);
     Serial.print("Read File Status: ");
     Serial.println(file);  // debug
