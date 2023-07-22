@@ -32,7 +32,7 @@ char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 1;
 String filename = "sat-tx.txt";
-int slowdown = 400;
+int slowdown = 200;
 int dataStream = 1;  // defaults to basic packet, change to 1 if sensors are connected
 char time[10] = "";
 int benchMode = 0; // 1 if on bench, 0 if flight
@@ -135,9 +135,6 @@ void loop() {
 
   delay(slowdown);  // send data only every 1 sec
   //char radiopacket
-  time_t t = now();
-  Serial.print("The current time is: ");
-  Serial.print(hour(t));Serial.print(minute(t));Serial.println(second(t));
   
   // for whatever reason, i can't get this bit to work. please revisit it tomorrow.
   //char timepacket[20] = "Time packet =      "; // time packet
@@ -155,6 +152,22 @@ void loop() {
   Serial.println("--------------");
   radiopacket[19] = 0;  // not sure why this is here
 
+  time_t t = now();
+  Serial.print("The current time is: ");
+  int h = hour(t);
+  int m = minute(t);
+  int s = second(t); 
+  Serial.print(h);Serial.print(m);Serial.println(s);
+  
+  /*
+  char h[ ] = hour(t);
+  Serial.println(h);
+  char m[ ] = minute(t);
+  Serial.println(m);
+  char s[ ] = second(t);
+  Serial.println(s);
+  String(bar) = h
+  */ 
   String dataString = "";  // preallocate
 
   if (dataStream) {
@@ -229,7 +242,7 @@ void loop() {
     int packet_len = dataString.length() + 1;
     char packet_array[packet_len];
     dataString.toCharArray(packet_array, packet_len);
-    
+
     rf95.send((uint8_t *)packet_array, packet_len);
     if (verbose) {
       Serial.print("Tx pkt size: "); Serial.println(sizeof(packet_array));
