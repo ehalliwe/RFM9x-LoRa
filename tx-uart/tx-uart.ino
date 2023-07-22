@@ -31,10 +31,11 @@ File root;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 1;
-String filename = "bowltx2.txt";
-int slowdown = 1000;
-int dataStream = 0;  // defaults to basic packet, change to 1 if sensors are connected
+String filename = "sat-tx.txt";
+int slowdown = 400;
+int dataStream = 1;  // defaults to basic packet, change to 1 if sensors are connected
 char time[10] = "";
+int benchMode = 0; // 1 if on bench, 0 if flight
 
 void setup() {
 
@@ -44,10 +45,13 @@ void setup() {
   Serial.begin(115200);   // usb bus to computer
   Serial1.begin(115200);  // uart from sensor feather
 
+  if (benchMode){
   while (!Serial) delay(1);  // waits for serial
 
-  while (!Serial)
-    ;  // waits if not worky
+  while (!Serial1) delay(1);  // waits for serial
+
+  while (!Serial);  // waits if not worky
+  }
 
   Serial.print("--------------");
   Serial.print("Tx Startup Sequence");
@@ -77,7 +81,7 @@ void setup() {
   root = SD.open("/");
   printDirectory(root, 0);
 
-  Serial.println("Feather LoRa TX Test!");
+  Serial.println("Feather LoRa TX Module Starting!");
 
   // manual reset
   digitalWrite(RFM95_RST, LOW);
@@ -170,7 +174,7 @@ void loop() {
   }
 
   if (verbose) {
-    Serial.print("Sensor output: ");
+    Serial.println("Sensor output: ");
     Serial.println(dataString);  // prints to computer
   }
 
@@ -199,6 +203,7 @@ void loop() {
     if (file) {
       while (file.available()) {  // reads file from start to finish.. not sure how to do just the latest line.
         readfile = file.read();
+        // Serial.write(readfile); // too much barf
       }
     }
     Serial.print("Readfile output: ");
@@ -218,15 +223,17 @@ void loop() {
   // }
 
   Serial.println("Transmitting...");  // Send a message to rf95_server
+  digitalWrite(LED_BUILTIN, HIGH);
   delay(10);
   if (dataStream) {
     int packet_len = dataString.length() + 1;
     char packet_array[packet_len];
     dataString.toCharArray(packet_array, packet_len);
+    
     rf95.send((uint8_t *)packet_array, packet_len);
     if (verbose) {
-      Serial.print("Tx Packet: ");
-      Serial.println(packet_array);
+      Serial.print("Tx pkt size: "); Serial.println(sizeof(packet_array));
+      Serial.println("Tx pkt contents: "); Serial.println(packet_array);
     }
   } else {
     rf95.send((uint8_t *)radiopacket, 20);  // for testing if not connected
@@ -256,6 +263,7 @@ void loop() {
   } else {
     Serial.println("Receive timeout.");
   }
+  digitalWrite(LED_BUILTIN, LOW);
 
   /* // old transmitter code artifacts
   // delay(1000); // Wait 1 second between transmits, could also 'sleep' here!
