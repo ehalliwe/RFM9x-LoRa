@@ -7,6 +7,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////////////////
 
+#include <TimeLib.h>
 #include <SPI.h>
 #include <RH_RF95.h>
 #include <SD.h>
@@ -30,7 +31,7 @@ File root;
 char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 0;
-String filename = "bat-rx.txt";
+String filename = "sat-rx.txt";
 
 void setup() {
 
@@ -69,7 +70,7 @@ void setup() {
   root = SD.open("/");
   printDirectory(root, 0);
 
-  Serial.println("Feather LoRa RX Test!");
+  Serial.println("Feather LoRa RX Module Starting!");
 
   // manual reset
   digitalWrite(RFM95_RST, LOW);
@@ -104,6 +105,10 @@ void setup() {
 	
 	Serial.print("File in use: "); Serial.println(filename);
 
+  time_t t = now();
+  Serial.print("The current time is: ");
+  Serial.print(hour(t));Serial.print(minute(t));Serial.println(second(t));
+
 	Serial.println("Here goes nothing...");
 }
 
@@ -118,11 +123,16 @@ void loop() {
     if (rf95.recv(buf, &len)) {
       digitalWrite(LED_BUILTIN, HIGH);
       Serial.println("---------------------------------------------");
+      time_t t = now();
+      Serial.print("Packet recieved at internal time: "); 
+      Serial.print(hour(t));Serial.print(minute(t));Serial.println(second(t));
+  
       RH_RF95::printBuffer("Received: ", buf, len);
       Serial.print("Got: ");
       Serial.println((char*)buf);
       Serial.print("RSSI: ");
       Serial.println(rf95.lastRssi(), DEC);
+      // Serial.print("Rx pkt size: "); Serial.println(sizeof(buf)); // always 251. duh
       
       file = SD.open(filename, FILE_WRITE); // create file to write data to
       if (file) {
