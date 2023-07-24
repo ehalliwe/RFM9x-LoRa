@@ -136,7 +136,6 @@ void loop() {
 
   delay(slowdown);  // send data only every 1 sec
   //char radiopacket
-  
   // for whatever reason, i can't get this bit to work. please revisit it tomorrow.
   //char timepacket[20] = "Time packet =      "; // time packet
   //itoa(second(t), timepacket + 17, 10);
@@ -145,7 +144,7 @@ void loop() {
   //Serial.print("--------------");
   //Serial.print(timepacket);
   //Serial.println("--------------");
-
+  
   char radiopacket[20] = "Data packet #      ";  // default message
   itoa(packetnum++, radiopacket + 13, 10);       // iteration counter
   Serial.print("--------------");
@@ -166,13 +165,10 @@ void loop() {
   preamble += String(s);
   Serial.println(preamble);
   preamble += ",";
-
   preamble += String(radiopacket);
   Serial.println(preamble);
   preamble += ",";
-
   String sensorData = ""; // preallocate sensor data
-
   if (dataStream) {
     while (Serial1.available()) {    // reads data from sensor UART if available
       char inByte = Serial1.read();  // reads to char
