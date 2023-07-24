@@ -124,6 +124,14 @@ void loop() {
       digitalWrite(LED_BUILTIN, HIGH);
       Serial.println("---------------------------------------------");
       time_t t = now();
+      unsigned long h = hour(t);
+      unsigned long m = minute(t);
+      unsigned long s = second(t); 
+      String rxpreamble = "";
+      rxpreamble += String(h);
+      rxpreamble += String(m);
+      rxpreamble += String(s);
+      rxpreamble += ",";
       Serial.print("Packet recieved at internal time: "); 
       Serial.print(hour(t));Serial.print(minute(t));Serial.println(second(t));
   
@@ -132,6 +140,12 @@ void loop() {
       Serial.println((char*)buf);
       Serial.print("RSSI: ");
       Serial.println(rf95.lastRssi(), DEC);
+      Serial.println("Adding timestamp and RSSI");
+      rxpreamble += String(rf95.lastRssi());
+      rxpreamble += ",";
+      rxpreamble += String((char*)buf);
+      Serial.print("Saving: ");
+      Serial.println(rxpreamble);
       // Serial.print("Rx pkt size: "); Serial.println(sizeof(buf)); // always 251. duh
       
       file = SD.open(filename, FILE_WRITE); // create file to write data to

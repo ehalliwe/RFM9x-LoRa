@@ -29,37 +29,46 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 File file;
 File root;
 char readfile;
+int16_t recvFail = 0; // counts number of failed packets
+int16_t recvTimeout = 0; // counts number of failed packets
 int16_t packetnum = 0;  // packet counter, we increment per xmission
-int verbose = 1;
-int verbose_readfile = 0;
-String filename = "sat-tx.txt";
-int slowdown = 200;
+int16_t dirnum = 0;
+int sdbarf = 0;
+String condition = "";
+String folder = "";
+int verbose = 1; // barfs a lot 
+int verbose_readfile = 0; // barfs even more
+String filename = "barf-tx.txt"; // file to be written
+String sensorfile = "";
+int slowdown = 200; // delay between loop iterations
 int dataStream = 0;  // defaults to basic packet, change to 1 if sensors are connected
-char time[10] = "";
-int benchMode = 0; // 1 if on bench, 0 if flight
+int benchMode = 1; // 1 if on bench, 0 if flight
 
 void setup() {
-
-  pinMode(RFM95_RST, OUTPUT);
-  digitalWrite(RFM95_RST, HIGH);
+  // digitalWrite(PIN_LED3,HIGH);
+  pinMode(RFM95_RST, OUTPUT); // config lora reset pin
+  digitalWrite(RFM95_RST, HIGH); // make spi reset on lora
 
   Serial.begin(115200);   // usb bus to computer
+
   Serial1.begin(115200);  // uart from sensor feather
 
-  if (benchMode){
-  while (!Serial) delay(1);  // waits for serial
+  if (benchMode){ // waits if the system is on the bench
+    while (!Serial) delay(1);  // waits for serial to computer
 
-  while (!Serial1) delay(1);  // waits for serial
+    while (!Serial1) delay(1);  // waits for serial to sensor feather
 
-  while (!Serial);  // waits if not worky
+    while (!Serial);  // waits
   }
 
+  delay(500);
   Serial.print("--------------");
   Serial.print("Tx Startup Sequence");
   Serial.println("--------------");
 
+  delay(500);
   Serial.print("Initializing SD card...");
-
+  
   if (!SD.begin(PIN_SPI_CS)) {
 
     Serial.println("initialization failed. Things to check:");
@@ -76,20 +85,48 @@ void setup() {
       ;
   }
   Serial.println("initialization done.");
-  delay(100);
+  delay(500);
 
-  Serial.println("Contents of SD Card:");
-  root = SD.open("/");
-  printDirectory(root, 0);
+  dirnum = 0;
+  condition = "/tlog";
+  condition += String(dirnum);
 
+  while (SD.exists(condition)){
+    dirnum++;
+    condition = "/tlog";
+    condition += String(dirnum);
+    if (verbose) {
+      Serial.println(condition);
+    }
+  }
+  SD.mkdir(condition);
+
+  // if (SD.exists("/tx-log-0")){
+  //   dirnum++;
+  //   folder = "/tx-log-";
+  //   folder += String(dirnum);
+  //   SD.mkdir(folder);
+  // }
+  // if (!SD.exists("/tx-log-0")){
+  //   SD.mkdir("/tx-log-0");
+  // }
+
+  if (sdbarf) {
+    Serial.println("Printing contents of SD Card:");
+    root = SD.open("/");
+    printDirectory(root, 0); // calls function at the bottom
+  }
+
+  delay(5000);
   Serial.println("Feather LoRa TX Module Starting!");
 
-  // manual reset
+  // boop the LoRa spi
   digitalWrite(RFM95_RST, LOW);
   delay(10);
   digitalWrite(RFM95_RST, HIGH);
   delay(10);
 
+  // consider changing the way this works
   while (!rf95.init()) {
     Serial.println("LoRa radio init failed");
     Serial.println("Uncomment '#define SERIAL_DEBUG' in RH_RF95.cpp for detailed debug info");
@@ -98,14 +135,14 @@ void setup() {
   }
   Serial.println("LoRa Tx radio init OK!");
 
+  // consider changing the way this works
   // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM
   if (!rf95.setFrequency(RF95_FREQ)) {
     Serial.println("setFrequency failed");
     while (1)
       ;
   }
-  Serial.print("Set Freq to: ");
-  Serial.println(RF95_FREQ);
+  Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
 
   // Defaults after init are 434.0MHz, 13dBm, Bw = 125 kHz, Cr = 4/5, Sf = 128chips/symbol, CRC on
 
@@ -113,11 +150,11 @@ void setup() {
   // If you are using RFM95/96/97/98 modules which uses the PA_BOOST transmitter pin, then
   // you can set transmitter powers from 5 to 23 dBm:
   rf95.setTxPower(23, false);
-
   Serial.println("Tx Power set to 23 dBm");
-
-  Serial.print("Verbosity level: ");
-  Serial.println(verbose);
+  delay(500);
+  Serial.println("Debug info starting...");
+  Serial.print("On the bench? ");
+  Serial.println(benchMode);
 
   Serial.print("File in use: ");
   Serial.println(filename);
@@ -134,42 +171,48 @@ void setup() {
 
 void loop() {
 
-  delay(slowdown);  // send data only every 1 sec
-  //char radiopacket
-  // for whatever reason, i can't get this bit to work. please revisit it tomorrow.
-  //char timepacket[20] = "Time packet =      "; // time packet
-  //itoa(second(t), timepacket + 17, 10);
-  //itoa(minute(t), timepacket + 15, 10);       // iteration counter
-  //itoa(second(t), timepacket + 17, 10);       // iteration counter
-  //Serial.print("--------------");
-  //Serial.print(timepacket);
-  //Serial.println("--------------");
+  delay(slowdown); 
   
   char radiopacket[20] = "Data packet #      ";  // default message
   itoa(packetnum++, radiopacket + 13, 10);       // iteration counter
-  Serial.print("--------------");
-  Serial.print(radiopacket);
-  Serial.println("--------------");
+  if (verbose) {
+    Serial.print("--------------");
+    Serial.print(radiopacket);
+    Serial.println("--------------");
+  }
   radiopacket[19] = 0;  // not sure why this is here
 
+  // get timestamp for packet
   time_t t = now();
-  Serial.print("The pkt timestamp will be: ");
+  if (benchMode) {
+    Serial.print("The pkt timestamp will be: ");
+  }
   unsigned long h = hour(t);
   unsigned long m = minute(t);
   unsigned long s = second(t); 
  
+  // create the preamble for the packet
   String preamble = "";  // preallocate preamble
   preamble += ",";
   preamble += String(h);
   preamble += String(m);
   preamble += String(s);
-  Serial.println(preamble);
+  if (benchMode) {
+    Serial.println(preamble);
+  }
   preamble += ",";
-  preamble += String(radiopacket);
-  Serial.println(preamble);
+  preamble += String(packetnum);
+  if (benchMode) {
+    Serial.println(preamble);
+  }
   preamble += ",";
+  preamble += String(recvFail);
+  preamble += ",";
+  preamble += String(recvTimeout);
+  preamble += ",";
+
   String sensorData = ""; // preallocate sensor data
-  if (dataStream) {
+  if (dataStream) { // skips if we know not connected to sensor feather
     while (Serial1.available()) {    // reads data from sensor UART if available
       char inByte = Serial1.read();  // reads to char
                                      // if (verbose) {
@@ -179,21 +222,28 @@ void loop() {
     }
   }
   preamble += String(sensorData.length()); // appends sensor data length
-  Serial.println(preamble);
+  if (benchMode) {
+    Serial.println(preamble);
+  }
   preamble += ",";
 
   String middleMan = ""; // preallocate temp variable to get length
   middleMan += preamble; // add preamble 
-  Serial.println(middleMan);
+  if (benchMode) {
+    Serial.println(middleMan);
+  }
   middleMan += sensorData; // add sensor data
-  Serial.println(middleMan);
+  if (benchMode) {
+    Serial.println(middleMan);
+  }
 
   String dataString = "";
   dataString += String(middleMan.length());
   dataString += middleMan; // this is the packet to be sent
 
-
-  file = SD.open(filename, FILE_WRITE);  // opens Tx SD card for data writing. also print to computer terminal
+  file = SD.open(filename, FILE_WRITE); // opens Tx SD card for data writing. 
+                                        // also print to computer terminal
+  
   if (verbose) {
     Serial.print("Write File Status: ");
     Serial.println(file);  // debug
@@ -203,25 +253,15 @@ void loop() {
     Serial.println("Sensor output: ");
     Serial.println(dataString);  // prints to computer
   }
-
+  delay(10);
   if (file) {
-    // if (verbose) {
-    // Serial.write(dataString); // this now throws an error. NO IDEA WHY.
-    // }
-    if (dataStream) {
-      file.print(dataString);  // prints data into file
-    } else {
-      file.print(radiopacket);  // test write of radiopacket data. turn off
-    }
+    file.print(dataString);  // prints data into file
     file.close();  // don't need that anymore
   } else {         // error oopsies
     Serial.println(F("SD Card: error on opening Tx file for writing"));
   }
 
-  // Serial.print("SD Card ing, attempt "); Serial.println(packetnum);
-  // reading from file to check that the data was written in correctly. don't use this in the flight code
-
-  if (verbose_readfile) {
+  if (verbose_readfile) { // this barfs SO much, you've been warned
     file = SD.open(filename, FILE_READ);
     Serial.print("Read File Status: ");
     Serial.println(file);  // debug
@@ -241,34 +281,42 @@ void loop() {
     file.close();
   }
 
-  // now actually sending the data to the Rx feather + LoRa
-  // if(dataStream) {
-  //   int packet_len = dataString.length()+1 ;
-  //   char packet_array[packet_len];
-  //   dataString.toCharArray(packet_array, packet_len);
-  // }
+  sensorfile = "";
+  sensorfile += "/tlog";
+  sensorfile += String(dirnum);
+  sensorfile += "/";
+  sensorfile += String(packetnum);
+  sensorfile += "-t";
+  sensorfile += ".txt";
+  if (verbose) {
+    Serial.println(sensorfile);
+  }
+  file = SD.open(sensorfile, FILE_WRITE);
+  delay(10);
+  if (file) {
+    file.print(dataString);
+    delay(10);
+    file.close();
+    delay(10);
+  }
 
-  Serial.println("Transmitting...");  // Send a message to rf95_server
+  if (verbose) {
+    Serial.println("Transmitting...");  // Send a message to rf95_server
+  }
+
   digitalWrite(LED_BUILTIN, HIGH);
   delay(10);
-  if (dataStream) {
-    int packet_len = dataString.length() + 1;
-    char packet_array[packet_len];
-    dataString.toCharArray(packet_array, packet_len);
-
-    rf95.send((uint8_t *)packet_array, packet_len);
-    if (verbose) {
-      Serial.print("Tx pkt size: "); Serial.println(sizeof(packet_array));
-      Serial.println("Tx pkt contents: "); Serial.println(packet_array);
-    }
-  } else {
-    rf95.send((uint8_t *)radiopacket, 20);  // for testing if not connected
-    if (verbose) {
-      Serial.print("Tx Packet: ");
-      Serial.println(radiopacket);
-    }
+  int packet_len = dataString.length() + 1;
+  char packet_array[packet_len];
+  dataString.toCharArray(packet_array, packet_len);
+  rf95.send((uint8_t *)packet_array, packet_len);
+  if (verbose) {
+    Serial.print("Tx pkt size: "); Serial.println(sizeof(packet_array));
+    Serial.println("Tx pkt contents: "); Serial.println(packet_array);
   }
-  Serial.println("Sent. Waiting for acknowledgement...");
+  if (verbose) {
+    Serial.println("Sent. Waiting for acknowledgement...");
+  }
   delay(10);
   rf95.waitPacketSent();
   // Now wait for a reply
@@ -279,18 +327,28 @@ void loop() {
   if (rf95.waitAvailableTimeout(3000)) {
     // Should be a reply message for us now
     if (rf95.recv(buf, &len)) {
-      Serial.print("Got reply: ");
-      Serial.println((char *)buf);
-      Serial.print("RSSI: ");  // received signal strength index. signal is stronger when value is closer to 0.
-      Serial.println(rf95.lastRssi(), DEC);
+      if (verbose){
+        Serial.print("Got reply: ");
+        Serial.println((char *)buf);
+      }
+      if (verbose){
+        Serial.print("RSSI: ");  // received signal strength index. signal is stronger when value is closer to 0.
+        Serial.println(rf95.lastRssi(), DEC);
+      }
+      
     } else {
-      Serial.println("Receive failed");
+      if (verbose) {
+        Serial.println("Receive failed");
+      }
+      recvFail++;
     }
   } else {
-    Serial.println("Receive timeout.");
+    if (verbose){
+      Serial.println("Receive timeout.");
+    }
+    recvTimeout++;
   }
   digitalWrite(LED_BUILTIN, LOW);
-
 }
 
 void printDirectory(File dir, int numTabs) {
