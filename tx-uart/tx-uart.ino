@@ -41,8 +41,8 @@ int verbose_readfile = 0; // barfs even more
 String filename = "barf-tx.txt"; // file to be written
 String sensorfile = "";
 int slowdown = 200; // delay between loop iterations
-int dataStream = 0;  // defaults to basic packet, change to 1 if sensors are connected
-int benchMode = 1; // 1 if on bench, 0 if flight
+int dataStream = 1;  // defaults to basic packet, change to 1 if sensors are connected
+int benchMode = 0; // 1 if on bench, 0 if flight
 
 void setup() {
   // digitalWrite(PIN_LED3,HIGH);
@@ -324,7 +324,7 @@ void loop() {
   uint8_t len = sizeof(buf);
 
   // Serial.println("Waiting for reply...");
-  if (rf95.waitAvailableTimeout(3000)) {
+  if (rf95.waitAvailableTimeout(1000)) {
     // Should be a reply message for us now
     if (rf95.recv(buf, &len)) {
       if (verbose){
