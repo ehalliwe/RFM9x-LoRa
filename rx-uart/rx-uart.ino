@@ -32,6 +32,7 @@ char readfile;
 int16_t packetnum = 0;  // packet counter, we increment per xmission
 int verbose = 0;
 String filename = "sat-rx.txt";
+int rxpktnum = 0;
 
 void setup() {
 
@@ -121,6 +122,7 @@ void loop() {
     uint8_t len = sizeof(buf);
 
     if (rf95.recv(buf, &len)) {
+      rxpktnum++;
       digitalWrite(LED_BUILTIN, HIGH);
       Serial.println("---------------------------------------------");
       time_t t = now();
@@ -131,6 +133,8 @@ void loop() {
       rxpreamble += String(h);
       rxpreamble += String(m);
       rxpreamble += String(s);
+      rxpreamble += ",";
+      rxpreamble += String(rxpktnum);
       rxpreamble += ",";
       Serial.print("Packet recieved at internal time: "); 
       Serial.print(hour(t));Serial.print(minute(t));Serial.println(second(t));
@@ -150,7 +154,7 @@ void loop() {
       
       file = SD.open(filename, FILE_WRITE); // create file to write data to
       if (file) {
-        file.print((char*)buf);
+        file.print(rxpreamble);
         file.close();
       }
       else {
