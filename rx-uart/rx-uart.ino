@@ -18,6 +18,29 @@
 // RMC 549 Space Mission Design
 // Sensors -> MISC. -> Sci. Feather -> UART -> LoRa Feather -> SPI -> LoRa Module 
 //
+//  PACKET FORMAT 
+//
+//  [rx-preamble],[tx-preamble],[science-data]
+// 
+//  [rx-preamble]:  
+//        
+//        [time], [packet no], [RSSI]
+//  
+//  [tx-preamble]:  
+//        
+//        [chars remaining], [time], [packet no], [receiver failures],
+//        [receiver timeout], [chars remaining]
+//
+//  [science-data]: 
+//         
+//        [millis], [x orientation], [y orientation], [z orientation], 
+//        [x a_vel.], [y a_vel.], [z a_vel.], [x lin acc.], [y lin acc.], [z lin acc.], 
+//        [x mag], [y mag], [z mag], [x acc.], [y acc.], [z acc.],
+//        [x grav], [y grav], [z grav], [rtd temp], [pressure],
+//        [pressure temp], [imu temp], [ozone], [geiger counts],
+//        [humid. temp], [humidity], [uv], [duv index], [duv index avg]
+//
+//
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <TimeLib.h>
