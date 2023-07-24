@@ -34,7 +34,7 @@ int verbose = 1;
 int verbose_readfile = 0;
 String filename = "sat-tx.txt";
 int slowdown = 200;
-int dataStream = 1;  // defaults to basic packet, change to 1 if sensors are connected
+int dataStream = 0;  // defaults to basic packet, change to 1 if sensors are connected
 char time[10] = "";
 int benchMode = 0; // 1 if on bench, 0 if flight
 
@@ -295,35 +295,6 @@ void loop() {
   }
   digitalWrite(LED_BUILTIN, LOW);
 
-  /* // old transmitter code artifacts
-  // delay(1000); // Wait 1 second between transmits, could also 'sleep' here!
-  Serial.println("Transmitting..."); // Send a message to rf95_server
-  delay(10);
-  rf95.send((uint8_t *)radiopacket, 20);
-  rf95.send((uint8_t *)inByte, 150);
-
-  Serial.println("Waiting for packet to complete...");
-  delay(10);
-  rf95.waitPacketSent();
-  // Now wait for a reply
-  uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-  uint8_t len = sizeof(buf);
-
-  Serial.println("Waiting for reply...");
-  if (rf95.waitAvailableTimeout(2000)) {
-    // Should be a reply message for us now
-    if (rf95.recv(buf, &len)) {
-      Serial.print("Got reply: ");
-      Serial.println((char*)buf);
-      Serial.print("RSSI: ");
-      Serial.println(rf95.lastRssi(), DEC);
-    } else {
-      Serial.println("Receive failed");
-    }
-  } else {
-    Serial.println("No reply, is there a listener around?");
-  }
- */
 }
 
 void printDirectory(File dir, int numTabs) {
